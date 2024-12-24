@@ -1,0 +1,26 @@
+hosts: all
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Pull Docker Image
+      command: docker pull khalidha0130/weather-app:latest
+
+    - name: Check if Docker Container is Running
+      command: docker ps --filter "name=weather-app" --filter "status=running" --quiet
+      register: container_status
+      changed_when: false
+
+    - name: Start Docker Container if Not Running
+      command: docker run -d --name weather-app -p 5000:5000 khalidha0130/weather-app:latest
+      when: container_status.stdout == ""
+
+    - name: Skip Starting Container if Already Running
+      debug:
+        msg: "The container is already running. Skipping the start step."
+      when: container_status.stdout != ""
+
